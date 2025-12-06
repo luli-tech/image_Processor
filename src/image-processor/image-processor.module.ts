@@ -7,7 +7,7 @@ import { CloudinaryModule } from '../cloudinary/cloudinary.module';
 @Module({
   imports: [
     BullModule.registerQueue({
-      name: 'image-upload',
+      name: 'image-processor',
     }),
     CloudinaryModule,
   ],

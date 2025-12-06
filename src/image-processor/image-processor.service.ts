@@ -5,7 +5,7 @@ import { JobStatus } from './image-processor.types';
 
 @Injectable()
 export class ImageProcessorService {
-  constructor(@InjectQueue('image-upload') private imageQueue: Queue) {}
+  constructor(@InjectQueue('image-processor') private imageQueue: Queue) {}
 
   async processImage(file: Express.Multer.File): Promise<string> {
     const job = await this.imageQueue.add('upload', { file: { buffer: file.buffer, originalname: file.originalname, mimetype: file.mimetype } });
