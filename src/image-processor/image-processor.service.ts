@@ -5,12 +5,14 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { JobStatus } from './image-processor.types';
 import { Image } from './schemas/image.schema';
+import { CloudinaryService } from '../cloudinary/cloudinary.service';
 
 @Injectable()
 export class ImageProcessorService {
   constructor(
     @InjectQueue('image-processor') private imageQueue: Queue,
     @InjectModel(Image.name) private imageModel: Model<Image>,
+    private readonly cloudinaryService: CloudinaryService,
   ) {}
 
   async processImage(file: Express.Multer.File): Promise<string> {
@@ -72,5 +74,31 @@ export class ImageProcessorService {
         result: job.returnvalue,
         error: job.failedReason
     };
+  }
+  async findAll(status?: string): Promise<Image[]> {
+    const filter = status ? { status } : {};
+    return this.imageModel.find(filter).exec();
+  }
+
+  async findOne(id: string): Promise<Image | undefined> {
+    const result = await this.imageModel.findById(id).exec();
+    return result || undefined;
+  }
+
+  async delete(id: string): Promise<void> {
+    const image = await this.imageModel.findById(id).exec();
+    if (!image) {
+        throw new Error('Image not found');
+    }
+
+    if (image.publicId) {
+        try {
+             await this.cloudinaryService.deleteImage(image.publicId);
+        } catch (e) {
+            console.error('Failed to delete from Cloudinary', e);
+        }
+    }
+    
+    await this.imageModel.findByIdAndDelete(id).exec();
   }
 }

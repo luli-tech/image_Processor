@@ -7,6 +7,8 @@ import {
   Get,
   Param,
   NotFoundException,
+  Delete,
+  Query,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ApiTags, ApiOperation, ApiResponse, ApiConsumes, ApiBody } from '@nestjs/swagger';
@@ -57,5 +59,34 @@ export class UploadController {
       throw new NotFoundException(`Job with ID ${id} not found`);
     }
     return status;
+  }
+  @Get('images')
+  @ApiOperation({ summary: 'Get all images, optionally filtered by status' })
+  @ApiResponse({ status: 200, description: 'List of images.' })
+  async findAll(@Query('status') status?: string) {
+    return this.imageProcessorService.findAll(status);
+  }
+
+  @Get('images/:id')
+  @ApiOperation({ summary: 'Get an image by ID' })
+  @ApiResponse({ status: 200, description: 'The image.' })
+  @ApiResponse({ status: 404, description: 'Image not found.' })
+  async findOne(@Param('id') id: string) {
+    const image = await this.imageProcessorService.findOne(id);
+    if (!image) {
+        throw new NotFoundException(`Image with ID ${id} not found`);
+    }
+    return image;
+  }
+
+  @Post('images/:id/delete') // Using POST for delete if DELETE method not preferred or for ease, but standard is DELETE.
+  // Actually let's use standard Delete
+  @Delete('images/:id')
+  @ApiOperation({ summary: 'Delete an image by ID' })
+  @ApiResponse({ status: 200, description: 'Image deleted.' })
+  @ApiResponse({ status: 404, description: 'Image not found.' })
+  async delete(@Param('id') id: string) {
+    await this.imageProcessorService.delete(id);
+    return { message: 'Image deleted successfully' };
   }
 }

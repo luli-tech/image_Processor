@@ -46,7 +46,8 @@ export class ImageConsumer extends WorkerHost {
                 { jobId: job.id },
                 { 
                     status: 'completed', 
-                    cloudinaryUrl: result, // result is the secure_url string based on CloudinaryService
+                    cloudinaryUrl: result.secure_url, 
+                    publicId: result.public_id,
                 }
             );
 

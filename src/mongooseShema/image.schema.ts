@@ -17,6 +17,9 @@ export class Image {
   @Prop()
   cloudinaryUrl: string;
 
+  @Prop()
+  publicId: string;
+
   @Prop({ required: true, enum: ['pending', 'completed', 'failed'], default: 'pending' })
   status: string;
 
