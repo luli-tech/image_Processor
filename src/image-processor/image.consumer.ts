@@ -4,7 +4,7 @@ import { CloudinaryService } from '../cloudinary/cloudinary.service';
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
-import { Image } from './schemas/image.schema';
+import {Image} from "src/mongooseShema/image.schema"
 
 @Processor('image-upload')
 @Injectable()

@@ -8,6 +8,9 @@ export class Image {
   @Prop({ required: true })
   originalName: string;
 
+  @Prop()
+  name: string;
+
   @Prop({ required: true })
   mimetype: string;
 

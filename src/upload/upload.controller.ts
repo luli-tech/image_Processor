@@ -9,6 +9,8 @@ import {
   NotFoundException,
   Delete,
   Query,
+  Body,
+  Patch,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ApiTags, ApiOperation, ApiResponse, ApiConsumes, ApiBody } from '@nestjs/swagger';
@@ -30,16 +32,20 @@ export class UploadController {
             type: 'string',
             format: 'binary',
         },
+        name: {
+            type: 'string',
+            description: 'Optional name for the image',
+        },
         },
     },
   })
   @ApiResponse({ status: 201, description: 'The image has been successfully queued for processing.', schema: { example: { jobId: 'uuid', message: 'Image is being processed in the background' } } })
   @UseInterceptors(FileInterceptor('file'))
-  async uploadFile(@UploadedFile() file: Express.Multer.File) {
+  async uploadFile(@UploadedFile() file: Express.Multer.File, @Body('name') name?: string) {
     if (!file) {
         throw new Error('File is missing');
     }
-    const jobId = await this.imageProcessorService.processImage(file);
+    const jobId = await this.imageProcessorService.processImage(file, name);
     return { jobId, message: 'Image is being processed in the background' };
   }
 
@@ -63,8 +69,12 @@ export class UploadController {
   @Get('images')
   @ApiOperation({ summary: 'Get all images, optionally filtered by status' })
   @ApiResponse({ status: 200, description: 'List of images.' })
-  async findAll(@Query('status') status?: string) {
-    return this.imageProcessorService.findAll(status);
+  async findAll(
+    @Query('status') status?: string,
+    @Query('page') page: number = 1,
+    @Query('limit') limit: number = 10,
+  ) {
+    return this.imageProcessorService.findAll(status, page, limit);
   }
 
   @Get('images/:id')
@@ -88,5 +98,19 @@ export class UploadController {
   async delete(@Param('id') id: string) {
     await this.imageProcessorService.delete(id);
     return { message: 'Image deleted successfully' };
+  }
+
+  @Patch('images/:id')
+  @ApiOperation({ summary: 'Update image name' })
+  @ApiBody({ schema: { type: 'object', properties: { name: { type: 'string' } } } })
+  async updateName(@Param('id') id: string, @Body('name') name: string) {
+    if (!name) {
+        throw new NotFoundException('Name is required');
+    }
+    const updatedImage = await this.imageProcessorService.updateName(id, name);
+    if (!updatedImage) {
+        throw new NotFoundException(`Image with ID ${id} not found`);
+    }
+    return updatedImage;
   }
 }

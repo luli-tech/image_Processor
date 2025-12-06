@@ -4,7 +4,7 @@ import { Queue } from 'bullmq';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { JobStatus } from './image-processor.types';
-import { Image } from './schemas/image.schema';
+import { Image } from 'src/mongooseShema/image.schema';
 import { CloudinaryService } from '../cloudinary/cloudinary.service';
 
 @Injectable()
@@ -15,7 +15,7 @@ export class ImageProcessorService {
     private readonly cloudinaryService: CloudinaryService,
   ) {}
 
-  async processImage(file: Express.Multer.File): Promise<string> {
+  async processImage(file: Express.Multer.File, name?: string): Promise<string> {
     const job = await this.imageQueue.add('upload', {
       file: {
         buffer: file.buffer,
@@ -26,6 +26,7 @@ export class ImageProcessorService {
 
     const createdImage = new this.imageModel({
       originalName: file.originalname,
+      name: name || file.originalname, // Default to original name if not provided
       mimetype: file.mimetype,
       jobId: job.id,
       status: 'pending',
@@ -75,9 +76,16 @@ export class ImageProcessorService {
         error: job.failedReason
     };
   }
-  async findAll(status?: string): Promise<Image[]> {
+  async findAll(status?: string, page: number = 1, limit: number = 10): Promise<{ data: Image[]; total: number; page: number; limit: number }> {
     const filter = status ? { status } : {};
-    return this.imageModel.find(filter).exec();
+    const skip = (page - 1) * limit;
+    
+    const [data, total] = await Promise.all([
+        this.imageModel.find(filter).skip(skip).limit(limit).exec(),
+        this.imageModel.countDocuments(filter).exec(),
+    ]);
+
+    return { data, total, page, limit };
   }
 
   async findOne(id: string): Promise<Image | undefined> {
@@ -100,5 +108,9 @@ export class ImageProcessorService {
     }
     
     await this.imageModel.findByIdAndDelete(id).exec();
+  }
+
+  async updateName(id: string, name: string): Promise<Image | null> {
+    return this.imageModel.findByIdAndUpdate(id, { name }, { new: true }).exec();
   }
 }
