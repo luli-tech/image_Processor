@@ -15,6 +15,9 @@ import {
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ApiTags, ApiOperation, ApiResponse, ApiConsumes, ApiBody } from '@nestjs/swagger';
 import { ImageProcessorService } from '../image-processor/image-processor.service';
+import { GetImagesFilterDto } from './dto/get-images.dto';
+import { UpdateImageDto } from './dto/update-image.dto';
+import { UploadImageDto } from './dto/upload-image.dto';
 
 @ApiTags('uploads')
 @Controller()
@@ -41,11 +44,11 @@ export class UploadController {
   })
   @ApiResponse({ status: 201, description: 'The image has been successfully queued for processing.', schema: { example: { jobId: 'uuid', message: 'Image is being processed in the background' } } })
   @UseInterceptors(FileInterceptor('file'))
-  async uploadFile(@UploadedFile() file: Express.Multer.File, @Body('name') name?: string) {
+  async uploadFile(@UploadedFile() file: Express.Multer.File, @Body() uploadImageDto: UploadImageDto) {
     if (!file) {
         throw new Error('File is missing');
     }
-    const jobId = await this.imageProcessorService.processImage(file, name);
+    const jobId = await this.imageProcessorService.processImage(file, uploadImageDto.name);
     return { jobId, message: 'Image is being processed in the background' };
   }
 
@@ -62,19 +65,16 @@ export class UploadController {
   async getStatus(@Param('id') id: string) {
     const status = await this.imageProcessorService.getJobStatus(id);
     if (!status) {
-      throw new NotFoundException(`Job with ID ${id} not found`);
+        throw new NotFoundException(`Job with ID ${id} not found`);
     }
     return status;
   }
+
   @Get('images')
   @ApiOperation({ summary: 'Get all images, optionally filtered by status' })
   @ApiResponse({ status: 200, description: 'List of images.' })
-  async findAll(
-    @Query('status') status?: string,
-    @Query('page') page: number = 1,
-    @Query('limit') limit: number = 10,
-  ) {
-    return this.imageProcessorService.findAll(status, page, limit);
+  async findAll(@Query() filterDto: GetImagesFilterDto) {
+    return this.imageProcessorService.findAll(filterDto.status, filterDto.page, filterDto.limit);
   }
 
   @Get('images/:id')
@@ -102,12 +102,9 @@ export class UploadController {
 
   @Patch('images/:id')
   @ApiOperation({ summary: 'Update image name' })
-  @ApiBody({ schema: { type: 'object', properties: { name: { type: 'string' } } } })
-  async updateName(@Param('id') id: string, @Body('name') name: string) {
-    if (!name) {
-        throw new NotFoundException('Name is required');
-    }
-    const updatedImage = await this.imageProcessorService.updateName(id, name);
+  @ApiBody({ type: UpdateImageDto })
+  async updateName(@Param('id') id: string, @Body() updateImageDto: UpdateImageDto) {
+    const updatedImage = await this.imageProcessorService.updateName(id, updateImageDto.name);
     if (!updatedImage) {
         throw new NotFoundException(`Image with ID ${id} not found`);
     }
