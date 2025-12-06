@@ -17,17 +17,17 @@ export class UploadController {
 
   @Post('upload')
   @UseInterceptors(FileInterceptor('file'))
-  uploadFile(@UploadedFile() file: Express.Multer.File) {
+  async uploadFile(@UploadedFile() file: Express.Multer.File) {
     if (!file) {
         throw new Error('File is missing');
     }
-    const jobId = this.imageProcessorService.processImage(file);
+    const jobId = await this.imageProcessorService.processImage(file);
     return { jobId, message: 'Image is being processed in the background' };
   }
 
   @Get('status/:id')
-  getStatus(@Param('id') id: string) {
-    const status = this.imageProcessorService.getJobStatus(id);
+  async getStatus(@Param('id') id: string) {
+    const status = await this.imageProcessorService.getJobStatus(id);
     if (!status) {
       throw new NotFoundException(`Job with ID ${id} not found`);
     }

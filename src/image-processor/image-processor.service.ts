@@ -1,39 +1,42 @@
-
 import { Injectable } from '@nestjs/common';
-import { v4 as uuidv4 } from 'uuid';
-import { CloudinaryService } from '../cloudinary/cloudinary.service';
-
-export interface JobStatus {
-  id: string;
-  status: 'processing' | 'completed' | 'failed';
-  result?: any;
-  error?: any;
-}
+import { InjectQueue } from '@nestjs/bullmq';
+import { Queue } from 'bullmq';
+import { JobStatus } from './image-processor.types';
 
 @Injectable()
 export class ImageProcessorService {
-  private jobs = new Map<string, JobStatus>();
+  constructor(@InjectQueue('image-upload') private imageQueue: Queue) {}
 
-  constructor(private readonly cloudinaryService: CloudinaryService) {}
-
-  processImage(file: Express.Multer.File): string {
-    const id = uuidv4();
-    this.jobs.set(id, { id, status: 'processing' });
-
-    // Background processing
-    this.cloudinaryService
-      .uploadImage(file)
-      .then((result) => {
-        this.jobs.set(id, { id, status: 'completed', result });
-      })
-      .catch((error) => {
-        this.jobs.set(id, { id, status: 'failed', error });
-      });
-
-    return id;
+  async processImage(file: Express.Multer.File): Promise<string> {
+    const job = await this.imageQueue.add('upload', { file: { buffer: file.buffer, originalname: file.originalname, mimetype: file.mimetype } });
+    return job.id!;
   }
 
-  getJobStatus(id: string): JobStatus | undefined {
-    return this.jobs.get(id);
+  async getJobStatus(id: string): Promise<JobStatus | undefined> {
+    const job = await this.imageQueue.getJob(id);
+    if (!job) {
+        return undefined;
+    }
+    
+    // BullMQ job states: active, completed, failed, delayed, waiting
+    // Our logical states: processing, completed, failed
+    
+    const state = await job.getState();
+    let status: 'processing' | 'completed' | 'failed';
+    
+    if (state === 'completed') {
+        status = 'completed';
+    } else if (state === 'failed') {
+        status = 'failed';
+    } else {
+        status = 'processing';
+    }
+
+    return {
+        id: job.id!,
+        status,
+        result: job.returnvalue,
+        error: job.failedReason
+    };
   }
 }
