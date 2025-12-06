@@ -11,6 +11,7 @@ async function bootstrap() {
     .setTitle('Image Upload Service')
     .setDescription('The image upload service API description')
     .setVersion('1.0')
+    .addApiKey({ type: 'apiKey', name: 'x-api-key', in: 'header' }, 'api_key')
     .addTag('uploads')
     .build();
   const document = SwaggerModule.createDocument(app, config);

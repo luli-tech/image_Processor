@@ -28,6 +28,12 @@ export class Image {
 
   @Prop()
   error: string;
+
+  @Prop({ type: [String], index: true, default: [] })
+  tags: string[];
+
+  @Prop()
+  webhookUrl: string;
 }
 
 export const ImageSchema = SchemaFactory.createForClass(Image);

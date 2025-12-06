@@ -15,18 +15,22 @@ export class ImageProcessorService {
     private readonly cloudinaryService: CloudinaryService,
   ) {}
 
-  async processImage(file: Express.Multer.File, name?: string): Promise<string> {
+  async processImage(file: Express.Multer.File, name?: string, tags?: string[], webhookUrl?: string, cloudinaryConfig?: any): Promise<string> {
     const job = await this.imageQueue.add('upload', {
       file: {
         buffer: file.buffer,
         originalname: file.originalname,
         mimetype: file.mimetype,
       },
+      webhookUrl,
+      cloudinaryConfig, // Pass tenant config
     });
 
     const createdImage = new this.imageModel({
       originalName: file.originalname,
-      name: name || file.originalname, // Default to original name if not provided
+      name: name || file.originalname,
+      tags: tags || [],
+      webhookUrl,
       mimetype: file.mimetype,
       jobId: job.id,
       status: 'pending',
@@ -76,8 +80,11 @@ export class ImageProcessorService {
         error: job.failedReason
     };
   }
-  async findAll(status?: string, page: number = 1, limit: number = 10): Promise<{ data: Image[]; total: number; page: number; limit: number }> {
-    const filter = status ? { status } : {};
+  async findAll(status?: string, page: number = 1, limit: number = 10, tag?: string): Promise<{ data: Image[]; total: number; page: number; limit: number }> {
+    const filter: any = {};
+    if (status) filter.status = status;
+    if (tag) filter.tags = tag;
+
     const skip = (page - 1) * limit;
     
     const [data, total] = await Promise.all([
@@ -110,7 +117,15 @@ export class ImageProcessorService {
     await this.imageModel.findByIdAndDelete(id).exec();
   }
 
-  async updateName(id: string, name: string): Promise<Image | null> {
-    return this.imageModel.findByIdAndUpdate(id, { name }, { new: true }).exec();
+  async update(id: string, updateData: { name?: string; tags?: string[] }): Promise<Image | null> {
+    return this.imageModel.findByIdAndUpdate(id, updateData, { new: true }).exec();
+  }
+
+  async getUrl(id: string, options?: { width?: number; height?: number; crop?: string; format?: string }): Promise<string> {
+      const image = await this.imageModel.findById(id).exec();
+      if (!image || !image.publicId) {
+          throw new Error('Image not found or not processed');
+      }
+      return this.cloudinaryService.getUrl(image.publicId, options);
   }
 }

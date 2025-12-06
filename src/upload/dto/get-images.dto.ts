@@ -8,6 +8,11 @@ export class GetImagesFilterDto {
   @IsString()
   status?: string;
 
+  @ApiPropertyOptional({ description: 'Filter by tag' })
+  @IsOptional()
+  @IsString()
+  tag?: string;
+
   @ApiPropertyOptional({ description: 'Page number', default: 1 })
   @IsOptional()
   @Type(() => Number)

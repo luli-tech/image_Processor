@@ -7,6 +7,7 @@ import { AppService } from './app.service';
 import { CloudinaryModule } from './cloudinary/cloudinary.module';
 import { ImageProcessorModule } from './image-processor/image-processor.module';
 import { UploadModule } from './upload/upload.module';
+import { ProjectsModule } from './projects/projects.module';
 
 @Module({
   imports: [
@@ -31,6 +32,7 @@ import { UploadModule } from './upload/upload.module';
     CloudinaryModule,
     ImageProcessorModule,
     UploadModule,
+    ProjectsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -5,6 +5,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import {Image} from "src/mongooseShema/image.schema"
+import axios from 'axios';
 
 @Processor('image-upload')
 @Injectable()
@@ -20,10 +21,11 @@ export class ImageConsumer extends WorkerHost {
 
   async process(job: Job<any, any, string>): Promise<any> {
     this.logger.debug(`Processing job ${job.id} of type ${job.name}`);
+    const { webhookUrl } = job.data;
     
     try {
         if (job.name === 'upload') {
-            const { file } = job.data;
+            const { file, cloudinaryConfig } = job.data;
             
             let buffer: Buffer;
             if (file.buffer && file.buffer.type === 'Buffer') {
@@ -40,7 +42,7 @@ export class ImageConsumer extends WorkerHost {
                 buffer: buffer
             };
             
-            const result = await this.cloudinaryService.uploadImage(uploadFile);
+            const result = await this.cloudinaryService.uploadImage(uploadFile, cloudinaryConfig);
             
             await this.imageModel.updateOne(
                 { jobId: job.id },
@@ -50,6 +52,18 @@ export class ImageConsumer extends WorkerHost {
                     publicId: result.public_id,
                 }
             );
+
+            if (webhookUrl) {
+                try {
+                    await axios.post(webhookUrl, {
+                        id: job.id,
+                        status: 'completed',
+                        result: { url: result.secure_url }
+                    });
+                } catch (webhookError) {
+                    this.logger.error(`Failed to send webhook for job ${job.id}: ${webhookError.message}`);
+                }
+            }
 
             return result;
         }
@@ -62,6 +76,18 @@ export class ImageConsumer extends WorkerHost {
                 error: error.message
             }
         );
+
+        if (webhookUrl) {
+            try {
+                await axios.post(webhookUrl, {
+                    id: job.id,
+                    status: 'failed',
+                    error: error.message
+                });
+            } catch (webhookError) {
+                this.logger.error(`Failed to send webhook failure notification for job ${job.id}: ${webhookError.message}`);
+            }
+        }
         throw error;
     }
   }

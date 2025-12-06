@@ -6,4 +6,14 @@ export class UploadImageDto {
   @IsOptional()
   @IsString()
   name?: string;
+
+  @ApiPropertyOptional({ description: 'Tags for the image', type: [String] })
+  @IsOptional()
+  @IsString({ each: true })
+  tags?: string[];
+
+  @ApiPropertyOptional({ description: 'Webhook URL to call on completion' })
+  @IsOptional()
+  @IsString()
+  webhookUrl?: string;
 }
