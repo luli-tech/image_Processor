@@ -15,12 +15,12 @@ export class ApiKeyGuard implements CanActivate {
     const apiKey = request.headers['x-api-key'];
 
     if (!apiKey) {
-      throw new UnauthorizedException('API Key missing');
+        throw new UnauthorizedException('API Key missing');
     }
 
     const project = await this.projectsService.findByApiKey(apiKey);
     if (!project) {
-      throw new UnauthorizedException('Invalid API Key');
+        throw new UnauthorizedException('Invalid API Key');
     }
 
     // Attach project to request for downstream use
