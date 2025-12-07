@@ -16,8 +16,8 @@ import { ProjectsModule } from './projects/projects.module';
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => ({
         connection: {
-          host: configService.get('REDIS_HOST') || 'localhost',
-          port: configService.get('REDIS_PORT') || 6379,
+          url: configService.get('REDIS_HOST') || 'localhost',
+          // port: configService.get('REDIS_PORT') || 6379,
         },
       }),
       inject: [ConfigService],
