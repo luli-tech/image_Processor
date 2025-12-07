@@ -15,40 +15,36 @@ jobs:
         node-version: [18.x, 20.x]
 
     steps:
-      # 1. Checkout the repo
       - uses: actions/checkout@v3
 
-      # 2. Setup Node.js
-      - name: Setup Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v3
-        with:
-          node-version: ${{ matrix.node-version }}
-          cache: 'pnpm'
-
-      # 3. Setup pnpm (v10)
+      # Install pnpm first
       - name: Setup pnpm
         uses: pnpm/action-setup@v2
         with:
-          version: 10
+          version: 10 # match your local version
 
-      # 4. Debug step to verify pnpm and PATH
+      # Now setup Node AND enable pnpm caching
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: pnpm
+
+      # Debug to verify pnpm exists
       - name: Debug pnpm
         run: |
+          echo "pnpm path: $(which pnpm)"
           pnpm -v
-          echo $PATH
 
-      # 5. Install dependencies
-      - name: Install dependencies
+      # Install dependencies
+      - name: Install deps
         run: pnpm install --frozen-lockfile
 
-      # 6. Lint the code
       - name: Lint
         run: pnpm run lint
 
-      # 7. Build the project
       - name: Build
         run: pnpm run build
 
-      # 8. Run tests
       - name: Test
         run: pnpm run test
