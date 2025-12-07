@@ -11,15 +11,33 @@ export class ProjectsService {
 
   async create(createProjectDto: CreateProjectDto): Promise<Project> {
       const apiKey = uuidv4();
+     const { name, cloudinaryConfig } = createProjectDto;
+    const existingProject = await this.projectModel.findOne({ name }).exec();
+    if (existingProject) {
+        throw new Error('Project name already exists');
+    }
       const newProject = new this.projectModel({
-          name: createProjectDto.name,
+          name,
           apiKey,
-          cloudinaryConfig: createProjectDto.cloudinaryConfig,
+          cloudinaryConfig,
       });
       return newProject.save();
+  }
+   async findByName(name: string): Promise<Project | null> {
+      return this.projectModel.findOne({ name }).exec();
   }
 
   async findByApiKey(apiKey: string): Promise<Project | null> {
       return this.projectModel.findOne({ apiKey }).exec();
+  }
+    async findAll(): Promise<Project[]> {
+      return this.projectModel.find().exec();
+  }
+
+  async deleteByApiKey(apiKey: string): Promise<void> {
+      const result = await this.projectModel.deleteOne({ apiKey }).exec();
+      if (result.deletedCount === 0) {
+          throw new Error('Project not found or already deleted');
+      }
   }
 }

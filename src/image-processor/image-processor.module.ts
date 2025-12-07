@@ -4,15 +4,14 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { ImageProcessorService } from './image-processor.service';
 import { ImageConsumer } from './image.consumer';
 import { CloudinaryModule } from '../cloudinary/cloudinary.module';
-// import { Image, ImageSchema } from './schemas/image.schema';
-import { ImageSchema,Image } from 'src/mongooseShema/image.schema';
+import { ImageSchema,cloudImage } from 'src/mongooseShema/image.schema';
 
 @Module({
   imports: [
     BullModule.registerQueue({
       name: 'image-processor',
     }),
-    MongooseModule.forFeature([{ name: Image.name, schema: ImageSchema }]),
+    MongooseModule.forFeature([{ name: cloudImage.name, schema: ImageSchema }]),
     CloudinaryModule,
   ],
   providers: [ImageProcessorService, ImageConsumer],

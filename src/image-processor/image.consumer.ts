@@ -4,17 +4,17 @@ import { CloudinaryService } from '../cloudinary/cloudinary.service';
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
-import {Image} from "src/mongooseShema/image.schema"
+import {cloudImage} from "src/mongooseShema/image.schema"
 import axios from 'axios';
 
-@Processor('image-upload')
+@Processor('image-processor')
 @Injectable()
 export class ImageConsumer extends WorkerHost {
   private readonly logger = new Logger(ImageConsumer.name);
 
   constructor(
     private readonly cloudinaryService: CloudinaryService,
-    @InjectModel(Image.name) private imageModel: Model<Image>,
+    @InjectModel(cloudImage.name) private imageModel: Model<cloudImage>,
   ) {
     super();
   }

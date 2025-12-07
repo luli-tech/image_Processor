@@ -1,10 +1,10 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument } from 'mongoose';
 
-export type ImageDocument = HydratedDocument<Image>;
+export type ImageDocument = HydratedDocument<cloudImage>;
 
 @Schema({ timestamps: true })
-export class Image {
+export class cloudImage {
   @Prop({ required: true })
   originalName: string;
 
@@ -36,4 +36,4 @@ export class Image {
   webhookUrl: string;
 }
 
-export const ImageSchema = SchemaFactory.createForClass(Image);
+export const ImageSchema = SchemaFactory.createForClass(cloudImage);

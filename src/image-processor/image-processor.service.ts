@@ -4,14 +4,14 @@ import { Queue } from 'bullmq';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { JobStatus } from './image-processor.types';
-import { Image } from 'src/mongooseShema/image.schema';
 import { CloudinaryService } from '../cloudinary/cloudinary.service';
+import { cloudImage } from 'src/mongooseShema/image.schema';
 
 @Injectable()
 export class ImageProcessorService {
   constructor(
     @InjectQueue('image-processor') private imageQueue: Queue,
-    @InjectModel(Image.name) private imageModel: Model<Image>,
+    @InjectModel(cloudImage.name) private imageModel: Model<cloudImage>,
     private readonly cloudinaryService: CloudinaryService,
   ) {}
 
@@ -80,7 +80,7 @@ export class ImageProcessorService {
         error: job.failedReason
     };
   }
-  async findAll(status?: string, page: number = 1, limit: number = 10, tag?: string): Promise<{ data: Image[]; total: number; page: number; limit: number }> {
+  async findAll(status?: string, page: number = 1, limit: number = 10, tag?: string): Promise<{ data: cloudImage[]; total: number; page: number; limit: number }> {
     const filter: any = {};
     if (status) filter.status = status;
     if (tag) filter.tags = tag;
@@ -95,7 +95,7 @@ export class ImageProcessorService {
     return { data, total, page, limit };
   }
 
-  async findOne(id: string): Promise<Image | undefined> {
+  async findOne(id: string): Promise<cloudImage | undefined> {
     const result = await this.imageModel.findById(id).exec();
     return result || undefined;
   }
@@ -117,7 +117,7 @@ export class ImageProcessorService {
     await this.imageModel.findByIdAndDelete(id).exec();
   }
 
-  async update(id: string, updateData: { name?: string; tags?: string[] }): Promise<Image | null> {
+  async update(id: string, updateData: { name?: string; tags?: string[] }): Promise<cloudImage | null> {
     return this.imageModel.findByIdAndUpdate(id, updateData, { new: true }).exec();
   }
 
