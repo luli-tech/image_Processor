@@ -23,7 +23,11 @@ export class cloudImage {
   @Prop()
   publicId: string;
 
-  @Prop({ required: true, enum: ['pending', 'completed', 'failed'], default: 'pending' })
+  @Prop({
+    required: true,
+    enum: ['pending', 'completed', 'failed'],
+    default: 'pending',
+  })
   status: string;
 
   @Prop()

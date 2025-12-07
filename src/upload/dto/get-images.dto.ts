@@ -3,7 +3,10 @@ import { Type } from 'class-transformer';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 
 export class GetImagesFilterDto {
-  @ApiPropertyOptional({ description: 'Filter by image status', enum: ['pending', 'completed', 'failed'] })
+  @ApiPropertyOptional({
+    description: 'Filter by image status',
+    enum: ['pending', 'completed', 'failed'],
+  })
   @IsOptional()
   @IsString()
   status?: string;

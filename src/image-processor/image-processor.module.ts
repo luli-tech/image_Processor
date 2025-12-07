@@ -4,7 +4,7 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { ImageProcessorService } from './image-processor.service';
 import { ImageConsumer } from './image.consumer';
 import { CloudinaryModule } from '../cloudinary/cloudinary.module';
-import { ImageSchema,cloudImage } from 'src/mongooseShema/image.schema';
+import { ImageSchema, cloudImage } from 'src/mongooseShema/image.schema';
 
 @Module({
   imports: [

@@ -8,7 +8,11 @@ export class UpdateImageDto {
   @MinLength(1)
   name?: string;
 
-  @ApiProperty({ description: 'Tags for the image', required: false, type: [String] })
+  @ApiProperty({
+    description: 'Tags for the image',
+    required: false,
+    type: [String],
+  })
   @IsOptional()
   @IsString({ each: true })
   tags?: string[];
