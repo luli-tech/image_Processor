@@ -28,6 +28,7 @@ import { ImageProcessorService } from '../image-processor/image-processor.servic
 import { GetImagesFilterDto } from './dto/get-images.dto';
 import { UpdateImageDto } from './dto/update-image.dto';
 import { UploadImageDto } from './dto/upload-image.dto';
+import { UploadBatchDto } from './dto/uploadbatch.dto';
 
 @ApiTags('uploads')
 @Controller()
@@ -94,30 +95,61 @@ export class UploadController {
   @Post('upload/batch')
   @UseGuards(ApiKeyGuard)
   @ApiSecurity('api_key')
-  @ApiOperation({ summary: 'Upload multiple images' })
+  @ApiOperation({ summary: 'Upload multiple images for background processing' })
   @ApiConsumes('multipart/form-data')
-  @ApiBody({
+  @ApiBody({ type: UploadBatchDto })
+  @ApiResponse({
+    status: 201,
+    description: 'The images have been successfully queued for processing.',
     schema: {
-      type: 'object',
-      properties: {
-        files: {
-          type: 'array',
-          items: {
-            type: 'string',
-            format: 'binary',
-          },
-        },
+      example: {
+        jobIds: ['uuid1', 'uuid2'],
+        message: '2 images queued for processing',
       },
     },
   })
-  @UseInterceptors(FilesInterceptor('files'))
-  async uploadFiles(@UploadedFiles() files: Array<Express.Multer.File>) {
-    if (!files || files.length === 0) {
-      throw new Error('Files are missing');
+  @UseInterceptors(FilesInterceptor('files', 5)) // Limit to 5 files
+  async uploadFiles(
+    @Req() req: any,
+    @UploadedFiles() files: Array<Express.Multer.File>,
+    @Body() uploadBatchDto: UploadBatchDto,
+  ) {
+    if (!files || files.length === 0) throw new Error('Files are missing');
+    if (files.length > 5) throw new Error('Maximum 5 files allowed per batch');
+
+    const names = [
+      uploadBatchDto.name1,
+      uploadBatchDto.name2,
+      uploadBatchDto.name3,
+      uploadBatchDto.name4,
+      uploadBatchDto.name5,
+    ].filter(Boolean) as string[];
+
+    const tags = [
+      uploadBatchDto.tags1,
+      uploadBatchDto.tags2,
+      uploadBatchDto.tags3,
+      uploadBatchDto.tags4,
+      uploadBatchDto.tags5,
+    ].filter(Boolean) as string[][];
+
+    if (names.length > 0 && names.length !== files.length) {
+      throw new Error('Number of names must match number of files');
     }
-    const jobs = await Promise.all(
-      files.map((file) => this.imageProcessorService.processImage(file)),
+    if (tags.length > 0 && tags.length !== files.length) {
+      throw new Error('Number of tag arrays must match number of files');
+    }
+
+    const project = req.project;
+    const cloudinaryConfig = project ? project.cloudinaryConfig : undefined;
+
+    const jobs = await this.imageProcessorService.processBatchImages(
+      files,
+      names,
+      tags,
+      cloudinaryConfig,
     );
+
     return {
       jobIds: jobs,
       message: `${files.length} images queued for processing`,
